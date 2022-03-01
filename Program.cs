@@ -1,7 +1,6 @@
 ﻿using System;
 using Excel = Microsoft.Office.Interop.Excel;
 using Microsoft.Office.Interop.Excel;
-using System.Data.OleDb;
 using System.Data;
 using System.IO;
 using System.Text;
@@ -12,6 +11,7 @@ using NPOI.HPSF;
 using NPOI.HSSF.Util;
 using System.Reflection;
 using System.Collections.Generic;
+using NPOI.POIFS.FileSystem;
 
 namespace ConsoleApp
 {
@@ -33,11 +33,12 @@ namespace ConsoleApp
             //rng.Select();
             //rng.Resize[1].Insert();
             //book.Close();
-            //insertData(app);
+            insertData("C:/Users/cn-yangzheng/Desktop/多表数据 - 副本.xls",11);
             //copyRange(app);
             //insertData(app);
-            System.Data.DataTable dt = ReadExcel();
-            WriteExcel(dt);
+           // System.Data.DataTable dt = ReadExcel();
+            //WriteExcel(dt);
+            
 
             Console.WriteLine("代码执行完毕！");
 
@@ -45,17 +46,47 @@ namespace ConsoleApp
             //SaveCsv(dt, "C:/Users/cn-yangzheng/Desktop/");
 
         }
-        public static void insertData(Excel.Application app)
+        /*
+         x代表要插入的行
+         */
+        public static void insertData(string filePath,int x)
         {
-            app.Visible = false;
+            IWorkbook book;
+            
+            using(FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            {
+               
+                book = new HSSFWorkbook(fs);
+                ISheet sheet = book.GetSheetAt(1);//获取sheet
+                var row = sheet.GetRow(x - 1);//获取第x行
+                sheet.ShiftRows(x-1, sheet.LastRowNum, 1);//从x行开始往下移动1行
+                var newRow = sheet.CreateRow(x-1);//创建新的一行
+                /*if (rowStyle != null)
+                   newRow.RowStyle = rowStyle;
+                   newRow.Height = rowSelf.Height;
+                for (int col = 0; col < newRow.LastCellNum; col++)
+                {
+                    var cellsource = rowSelf.GetCell(col);
+                    var cellInsert = newRow.CreateCell(col);
+                    var cellStyle = cellsource.CellStyle;
+                    //设置单元格样式　　　　
+                    if (cellStyle != null)
+                        cellInsert.CellStyle = cellsource.CellStyle;
+                }*/
+                FileStream out2 = new FileStream(filePath, FileMode.Create);
+                book.Write(out2);
+                out2.Close();
+                fs.Close();
+            }
+            /*app.Visible = false;
             
             int selectNum,insertNum;
           
             Excel.Workbooks books = app.Workbooks;
-            Excel.Workbook book = books.Open(@"C:\Users\cn-yangzheng\Desktop\测试.xls");
+            Excel.Workbook book = books.Open(@"C:\Users\cn-yangzheng\Desktop\多表数据 - 副本.xls");
             Excel.Sheets sts = book.Worksheets;
             //int SheetCount = sts.Count;
-            Excel.Worksheet st = sts.Item[1];//sts.Item[1 - SheetCount]
+            Excel.Worksheet st = sts.Item[3];//sts.Item[1 - SheetCount]
             Console.WriteLine("请输入选定行数：...");
             selectNum = ReadInt();
             Excel.Range rng = st.Application.Rows[selectNum];//返回的是一个range类型，选定第5行数据
@@ -69,17 +100,17 @@ namespace ConsoleApp
             app.DisplayAlerts = false;
             book.Save();
             book.Close();
-            app.Quit();
+            //app.Quit();*/
         }
 
         public static void copyRange(Excel.Application app)
         {
             int inputNum1, inputNum2, outputNum1,outputNum2,count;
             Excel.Workbooks books = app.Workbooks;
-            Excel.Workbook book = books.Open(@"C:\Users\cn-yangzheng\Desktop\测试.xls");
+            Excel.Workbook book = books.Open(@"C:\Users\cn-yangzheng\Desktop\多表数据 - 副本.xls");
             Excel.Sheets sts = book.Worksheets;
             //int SheetCount = sts.Count;
-            Excel.Worksheet st = sts.Item[1];//sts.Item[1 - SheetCount]
+            Excel.Worksheet st = sts.Item[3];//sts.Item[1 - SheetCount]
             //Excel.Range rng = st.Application.Cells[4];
             Console.WriteLine("请输入开始复制的行数：...");
             inputNum1 = ReadInt();
@@ -89,7 +120,7 @@ namespace ConsoleApp
             string str1 = inputNum1.ToString();
             string str2 = inputNum2.ToString();
             Excel.Range rng = st.Range[str1+":"+str2];//获取4到5行的表格数据
-            rng.Select();//选择表格数据
+           // rng.Select();//选择表格数据
             Console.WriteLine("请输入要复制到的行数：...");
             outputNum1 = ReadInt();
             outputNum2 = outputNum1 + count;
@@ -99,7 +130,7 @@ namespace ConsoleApp
             app.DisplayAlerts = false;
             book.Save();
             book.Close();
-            app.Quit();
+            //app.Quit();
         }
         public static int ReadInt()
         {
@@ -124,12 +155,13 @@ namespace ConsoleApp
         }
         public static void WriteExcel(System.Data.DataTable dt)
         {
-            ExcelUtility.DataTableToExcel(dt);
+            bool flag = ExcelUtility.DataTableToExcel(dt);
+            Console.WriteLine(flag);
         }
         public static System.Data.DataTable ReadExcel()
     {
             System.Data.DataTable dt = null;
-            string path  = "C:/Users/cn-yangzheng/Desktop/测试.xls";
+            string path  = "C:/Users/cn-yangzheng/Desktop/多表数据 - 副本.xls";
             dt = ExcelUtility.ExcelToDataTable(path, true);
             return dt;
     }
@@ -151,7 +183,7 @@ namespace ConsoleApp
                 ISheet sheet = null;
                 IRow row = null;
                 ICell cell = null;
-                int startRow = 0;
+                int startRow = 3;
                 try
                 {
                     using (fs = File.OpenRead(filePath))
@@ -165,7 +197,7 @@ namespace ConsoleApp
 
                         if (workbook != null)
                         {
-                            sheet = workbook.GetSheetAt(0);//读取第一个sheet，当然也可以循环读取每个sheet  
+                            sheet = workbook.GetSheetAt(2);//读取第一个sheet，当然也可以循环读取每个sheet  
                             dataTable = new System.Data.DataTable();
                             if (sheet != null)
                             {
@@ -174,13 +206,17 @@ namespace ConsoleApp
                                 {
                                     IRow firstRow = sheet.GetRow(0);//第一行  
                                     int cellCount = firstRow.LastCellNum;//列数  
+                                    
 
                                     //构建datatable的列  
                                     if (isColumnName)
                                     {
-                                        startRow = 1;//如果第一行是列名，则从第二行开始读取  
+                                        //Console.WriteLine(firstRow.FirstCellNum);
+                                        startRow =2 ;//如果第一行是列名，则从第二行开始读取  
+
                                         for (int i = firstRow.FirstCellNum; i < cellCount; i++)
                                         {
+                                            
                                             cell = firstRow.GetCell(i);
                                             if (cell != null)
                                             {
@@ -196,7 +232,7 @@ namespace ConsoleApp
                                     {
                                         for (int i = firstRow.FirstCellNum; i < cellCount; i++)
                                         {
-                                            column = new DataColumn("column" + (i + 1));
+                                            column = new DataColumn("columns" + (i+1));
                                             dataTable.Columns.Add(column);
                                         }
                                     }
@@ -206,11 +242,11 @@ namespace ConsoleApp
                                     {
                                         row = sheet.GetRow(i);
                                         if (row == null) continue;
-
                                         dataRow = dataTable.NewRow();
-                                        for (int j = row.FirstCellNum; j < cellCount; j++)
+                                        for (int j = row.FirstCellNum+1; j < cellCount; j++)
                                         {
                                             cell = row.GetCell(j);
+                                            
                                             if (cell == null)
                                             {
                                                 dataRow[j] = "";
@@ -228,7 +264,7 @@ namespace ConsoleApp
                                                         if (format == 14 || format == 31 || format == 57 || format == 58)
                                                             dataRow[j] = cell.DateCellValue;
                                                         else
-                                                            dataRow[j] = cell.NumericCellValue;
+                                                            dataRow[j] = (Double)cell.NumericCellValue;
                                                         break;
                                                     case (NPOI.SS.UserModel.CellType)CellType.String:
                                                         dataRow[j] = cell.StringCellValue;
@@ -236,7 +272,9 @@ namespace ConsoleApp
                                                 }
                                             }
                                         }
+                                      
                                         dataTable.Rows.Add(dataRow);
+                                
                                     }
                                 }
                             }
@@ -244,11 +282,12 @@ namespace ConsoleApp
                     }
                     return dataTable;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     if (fs != null)
                     {
                         fs.Close();
+                        Console.WriteLine(ex.Message);
                     }
                     return null;
                 }
@@ -351,8 +390,22 @@ namespace ConsoleApp
                 {
                     if (dt != null && dt.Rows.Count > 0)
                     {
-                        workbook = new HSSFWorkbook();
-                        sheet = workbook.CreateSheet("Sheet1");//创建一个名称为Sheet0的表  
+                        
+                        string fileName = "C:/Users/cn-yangzheng/Desktop/1234.xls";
+                        if (File.Exists(fileName))
+                        {
+                            fs = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                            POIFSFileSystem ps = new POIFSFileSystem(fs);
+                            workbook = new HSSFWorkbook(ps);
+                            sheet = workbook.GetSheetAt(0);
+                        }
+                        else
+                        {
+                            workbook = new HSSFWorkbook();
+                            //sheet = workbook.CreateSheet("Sheet1");//创建一个名称为Sheet0的表  
+                            sheet = workbook.CreateSheet("Sheet0");
+                        }
+                        row = sheet.GetRow(0);
                         int rowCount = dt.Rows.Count;//行数  
                         int columnCount = dt.Columns.Count;//列数  
 
@@ -361,20 +414,36 @@ namespace ConsoleApp
                         for (int c = 0; c < columnCount; c++)
                         {
                             cell = row.CreateCell(c);
-                            cell.SetCellValue(dt.Columns[c].ColumnName);
+                            cell.SetCellValue(""/*dt.Columns[c].ColumnName*/);
                         }
 
                         //设置每行每列的单元格,  
                         for (int i = 0; i < rowCount; i++)
                         {
-                            row = sheet.CreateRow(i + 1);
+                            row = sheet.CreateRow(i);
                             for (int j = 0; j < columnCount; j++)
                             {
-                                cell = row.CreateCell(j);//excel第二行开始写入数据  
-                                cell.SetCellValue(dt.Rows[i][j].ToString());
+                                cell = row.CreateCell(j);//excel第二行开始写入数据 
+                                Console.WriteLine(dt.Columns[j].DataType.ToString()+ dt.Rows[i][j]);
+                                if (dt.Columns[j].DataType == typeof(int))
+                                {
+                                    cell.SetCellValue((int)dt.Rows[i][j]);
+                                }
+                                else if (dt.Columns[j].DataType == typeof(float))
+                                {
+                                    cell.SetCellValue((float)dt.Rows[i][j]);
+                                }
+                                else if (dt.Columns[j].DataType == typeof(double))
+                                {
+                                    cell.SetCellValue((double)dt.Rows[i][j]);
+                                }
+                                else if (dt.Columns[j].DataType == typeof(string))
+                                {
+                                    cell.SetCellValue(dt.Rows[i][j].ToString());
+                                }
                             }
                         }
-                        using (fs = File.OpenWrite(@"C:/Users/cn-yangzheng/Desktop/测试3.xls"))
+                        using (fs = File.OpenWrite(@"C:/Users/cn-yangzheng/Desktop/1234.xls"))
                         {
                             workbook.Write(fs);//向打开的这个xls文件中写入数据  
                             result = true;
@@ -386,7 +455,9 @@ namespace ConsoleApp
                 {
                     if (fs != null)
                     {
+                        
                         fs.Close();
+                        Console.WriteLine(ex.Message);
                     }
                     return false;
                 }
@@ -397,6 +468,23 @@ namespace ConsoleApp
             Unknown = -1, Numeric = 0, String = 1, Formula = 2, Blank = 3, Boolean = 4, Error = 5
         }
        
+        }
+
+        public static void modelToExcel()
+        {
+            FileStream file = new FileStream(@"templatebook1.xls",FileMode.Open,FileAccess.Read);
+            HSSFWorkbook book = new HSSFWorkbook(file);
+            HSSFSheet sheet = (HSSFSheet)book.GetSheet("Sheet1");
+            HSSFCellStyle cellStyle = (HSSFCellStyle)book.CreateCellStyle();
+
+            int rowCount = sheet.LastRowNum;//行数
+            IRow firstRow = sheet.GetRow(0);
+            int cellCount = firstRow.LastCellNum;//列数
+            for (int i = 0;i<2;i++)
+            {
+                HSSFCell cell = (HSSFCell)sheet.GetRow(1).CreateCell(2);
+            }
+            
         }
     }
 }
