@@ -1,6 +1,4 @@
 ﻿using System;
-using Excel = Microsoft.Office.Interop.Excel;
-using Microsoft.Office.Interop.Excel;
 using System.Data;
 using System.IO;
 using System.Text;
@@ -20,31 +18,14 @@ namespace ConsoleApp
         static void Main(string[] args)
         {
             Console.WriteLine("代码开始执行...");
-            //Excel.Application app = new Excel.Application();
-            //app.Visible = true;//决定是隐藏打开，还是跳出Excel界面
-            //Excel.Workbooks books = exl.Workbooks;
-            //Excel.Workbook book = books.Open(@"C:\Users\cn-yangzheng\Desktop\template_Staff Exps in Key GnA Acct.xls");
-            //Excel.Sheets sts = book.Worksheets;
-            // int SheetCount = sts.Count;
-            // Excel.Worksheet st = sts.Item[1];//sts.Item[1 - SheetCount]
-            // Excel.Range rng = st.Application.Rows[5];//返回的是一个range类型，具体的方法可以用对象浏览器查看
-            //dynamic value = rng.Text;
-            //MessageBox.Show(value);//字符串 数字 日期 都可以正常使用
-            //rng.Select();
-            //rng.Resize[1].Insert();
-            //book.Close();
             //insertData("C:/Users/cn-yangzheng/Desktop/多表数据 - 副本.xls",11);
-            copyRange();
-            //insertData(app);
+            //copyRange();
+            modelToExcel();
             //System.Data.DataTable dt = ReadExcel();
             //WriteExcel(dt);
-            
-
             Console.WriteLine("代码执行完毕！");
-
             //System.Data.DataTable dt= ReadExcel();
             //SaveCsv(dt, "C:/Users/cn-yangzheng/Desktop/");
-
         }
         /*
          x代表要插入的行
@@ -52,46 +33,27 @@ namespace ConsoleApp
         public static void insertData(string filePath,int x)
         {
             IWorkbook book;
-            
             using(FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
-               
                 book = new HSSFWorkbook(fs);
                 ISheet sheet = book.GetSheetAt(1);//获取sheet
                 var row = sheet.GetRow(x - 1);//获取第x行
                 sheet.ShiftRows(x-1, sheet.LastRowNum, 1);//从x行开始往下移动1行
                 var newRow = sheet.CreateRow(x-1);//创建新的一行
-                /*if (rowStyle != null)
-                   newRow.RowStyle = rowStyle;
-                   newRow.Height = rowSelf.Height;
-                for (int col = 0; col < newRow.LastCellNum; col++)
-                {
-                    var cellsource = rowSelf.GetCell(col);
-                    var cellInsert = newRow.CreateCell(col);
-                    var cellStyle = cellsource.CellStyle;
-                    //设置单元格样式　　　　
-                    if (cellStyle != null)
-                        cellInsert.CellStyle = cellsource.CellStyle;
-                }*/
                 FileStream out2 = new FileStream(filePath, FileMode.Create);
                 book.Write(out2);
                 out2.Close();
                 fs.Close();
             }
             /*app.Visible = false;
-            
             int selectNum,insertNum;
-          
             Excel.Workbooks books = app.Workbooks;
             Excel.Workbook book = books.Open(@"C:\Users\cn-yangzheng\Desktop\多表数据 - 副本.xls");
             Excel.Sheets sts = book.Worksheets;
-            //int SheetCount = sts.Count;
             Excel.Worksheet st = sts.Item[3];//sts.Item[1 - SheetCount]
             Console.WriteLine("请输入选定行数：...");
             selectNum = ReadInt();
             Excel.Range rng = st.Application.Rows[selectNum];//返回的是一个range类型，选定第5行数据
-            //dynamic value = rng.Text;
-            //MessageBox.Show(value);//字符串 数字 日期 都可以正常使用
             rng.Select();
             Console.WriteLine("请输入插入行数：...");
             insertNum = ReadInt();
@@ -100,14 +62,13 @@ namespace ConsoleApp
             app.DisplayAlerts = false;
             book.Save();
             book.Close();
-            //app.Quit();*/
+           */
         }
 
         public static void copyRange()
         {
-            IWorkbook workbook = null;
-            ISheet sheet = null;
-            ICell cell = null;
+            IWorkbook workbook;
+            ISheet sheet;
         
             string filepath = "C:/Users/cn-yangzheng/Desktop/多表数据 - 副本.xls";
             FileStream fs = new FileStream(filepath, FileMode.Open);
@@ -312,7 +273,6 @@ namespace ConsoleApp
                 return list;
             }
 
-
             /// <summary>
             /// DataRow转实体
             /// </summary>
@@ -388,7 +348,6 @@ namespace ConsoleApp
                 {
                     if (dt != null && dt.Rows.Count > 0)
                     {
-                        
                         string fileName = "C:/Users/cn-yangzheng/Desktop/1234.xls";
                         if (File.Exists(fileName))
                         {
@@ -465,25 +424,56 @@ namespace ConsoleApp
         {
             Unknown = -1, Numeric = 0, String = 1, Formula = 2, Blank = 3, Boolean = 4, Error = 5
         }
-       
         }
 
         public static void modelToExcel()
         {
-            FileStream file = new FileStream(@"templatebook1.xls",FileMode.Open,FileAccess.Read);
-            HSSFWorkbook book = new HSSFWorkbook(file);
-            HSSFSheet sheet = (HSSFSheet)book.GetSheet("Sheet1");
-            HSSFCellStyle cellStyle = (HSSFCellStyle)book.CreateCellStyle();
-
-            int rowCount = sheet.LastRowNum;//行数
-            IRow firstRow = sheet.GetRow(0);
-            int cellCount = firstRow.LastCellNum;//列数
-            for (int i = 0;i<2;i++)
-            {
-                HSSFCell cell = (HSSFCell)sheet.GetRow(1).CreateCell(2);
-            }
+            FileStream fs = null;
+            string filePath = @"C:\Users\cn-yangzheng\Desktop\多表数据 - 副本.xls";
+                 fs = File.OpenRead(filePath);
             
+                int rowCount = 9;//总共要写入的行数
+                int columnCount = 3;//总共要写入的列数
+                int rowHead = 3;//定义文档行头为3行
+                int colHead = 1;//定义文档列头为1行
+            object[,] data = {
+                    {"TRAVEL EXPENSES", "商务应酬费", "Dummy"},
+                    {"", "", "孙意璐"},
+                    {"","", "张家茵"},
+                    {"","","总计" },
+                    {"TRAVEL EXPENSES","职员工作餐","Dummy" },
+                    {"","","张家茵" },
+                    {"","","孙意璐" },
+                    {"","","平燕燕" },
+                    {"","","总计" }
+
+        
+            };
+            
+            IWorkbook workbook = new HSSFWorkbook(fs);
+            fs.Close();
+            ISheet sheet = workbook.GetSheetAt(1);
+            sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(3,6,1,1));//将单元格进行合并
+            sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(3, 6, 2, 2));
+            sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(7, 11, 1, 1));
+            sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(7, 11, 2, 2));
+            IRow row ;
+            ICell cell ;
+                //ICellStyle style = workbook.CreateCellStyle();
+                //style.Alignment = HorizontalAlignment.Left;
+            for(int i = rowHead; i < rowHead + rowCount; i++)//遍历表格的行
+                {
+                    row = sheet.GetRow(i);//获取第i行
+                    for(int j =colHead; j <colHead + columnCount; j++)//遍历表格每一行的每一列
+                    {
+                        cell = row.GetCell(j);//获取第j个元素的数值
+                        cell.SetCellValue(data[i-rowHead,j-colHead].ToString());//将data二维数组中数据存入相对应的单元格当中
+                    }
+                }
+            FileStream fileStream = File.OpenWrite(filePath);
+            workbook.Write(fileStream);
+            fileStream.Close();
+            }
         }
     }
-}
 
