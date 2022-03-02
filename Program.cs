@@ -20,7 +20,7 @@ namespace ConsoleApp
         static void Main(string[] args)
         {
             Console.WriteLine("代码开始执行...");
-            Excel.Application app = new Excel.Application();
+            //Excel.Application app = new Excel.Application();
             //app.Visible = true;//决定是隐藏打开，还是跳出Excel界面
             //Excel.Workbooks books = exl.Workbooks;
             //Excel.Workbook book = books.Open(@"C:\Users\cn-yangzheng\Desktop\template_Staff Exps in Key GnA Acct.xls");
@@ -33,10 +33,10 @@ namespace ConsoleApp
             //rng.Select();
             //rng.Resize[1].Insert();
             //book.Close();
-            insertData("C:/Users/cn-yangzheng/Desktop/多表数据 - 副本.xls",11);
-            //copyRange(app);
+            //insertData("C:/Users/cn-yangzheng/Desktop/多表数据 - 副本.xls",11);
+            copyRange();
             //insertData(app);
-           // System.Data.DataTable dt = ReadExcel();
+            //System.Data.DataTable dt = ReadExcel();
             //WriteExcel(dt);
             
 
@@ -103,25 +103,25 @@ namespace ConsoleApp
             //app.Quit();*/
         }
 
-        public static void copyRange(Excel.Application app)
+        public static void copyRange()
         {
-            int inputNum1, inputNum2, outputNum1,outputNum2,count;
-            Excel.Workbooks books = app.Workbooks;
+            int inputNum1, inputNum2, outputNum1, outputNum2;
+          /*  Excel.Workbooks books = app.Workbooks;
             Excel.Workbook book = books.Open(@"C:\Users\cn-yangzheng\Desktop\多表数据 - 副本.xls");
             Excel.Sheets sts = book.Worksheets;
             //int SheetCount = sts.Count;
-            Excel.Worksheet st = sts.Item[3];//sts.Item[1 - SheetCount]
+            Excel.Worksheet st = sts.Item[3]*/;//sts.Item[1 - SheetCount]
             //Excel.Range rng = st.Application.Cells[4];
-            Console.WriteLine("请输入开始复制的行数：...");
+           /* Console.WriteLine("请输入开始复制的行数：...");
             inputNum1 = ReadInt();
             Console.WriteLine("请输入结束复制的行数：...");
             inputNum2 = ReadInt();
             count = inputNum2 - inputNum1;
             string str1 = inputNum1.ToString();
             string str2 = inputNum2.ToString();
-            Excel.Range rng = st.Range[str1+":"+str2];//获取4到5行的表格数据
+            Excel.Range rng = st.Range[str1+":"+str2];*///获取4到5行的表格数据
            // rng.Select();//选择表格数据
-            Console.WriteLine("请输入要复制到的行数：...");
+           /* Console.WriteLine("请输入要复制到的行数：...");
             outputNum1 = ReadInt();
             outputNum2 = outputNum1 + count;
             string str3 = outputNum1.ToString();
@@ -129,8 +129,97 @@ namespace ConsoleApp
             rng.Copy(st.Range[str3+":"+str4]);//复制到9到10行
             app.DisplayAlerts = false;
             book.Save();
-            book.Close();
+            book.Close();*/
             //app.Quit();
+
+            /**
+             * 1、首先获取用户想要复制的行数
+             * 2、使用遍历整行的方式获取区域内的表格数据
+             * 3、将表格数据存入到DataTable中
+             * 4、用户复制x行，整个文档从x-1处整体下移
+             * 5、插入表格行数，并将数据重新写入到x-1处
+             * 6。设置单元格格式
+             */
+            IWorkbook workbook = null;
+            ISheet sheet = null;
+            ICell cell = null;
+            System.Data.DataTable dt = null;
+            DataColumn column = null;
+            DataRow datarow = null;
+
+            string filepath = "C:/Users/cn-yangzheng/Desktop/多表数据 - 副本.xls";
+            FileStream fs = new FileStream(filepath, FileMode.Open);
+            workbook = new HSSFWorkbook(fs);
+            sheet = workbook.GetSheetAt(2);
+            Console.WriteLine("请输入开始复制的行数：...");
+            inputNum1 = ReadInt();
+            Console.WriteLine("请输入结束复制的行数：...");
+            inputNum2 = ReadInt();
+            int copyNum = inputNum2 - inputNum1;//用户复制的行数
+            IRow row = sheet.GetRow(inputNum1-1);//获取区域行数
+            int cellCount = row.LastCellNum;//获取区域列数
+            dt = new System.Data.DataTable("t_copy");
+            for (int i = row.FirstCellNum; i < cellCount; i++)
+            {
+                cell = row.GetCell(i);
+                cell.SetCellType(CellType.String);
+                if (cell != null)
+                {
+                    if (cell.StringCellValue != null)
+                    {
+
+                        column = new DataColumn(cell.StringCellValue);
+                        dt.Columns.Add(column);
+                    }
+                }
+            }
+
+            for(int i = inputNum1 - 1; i < copyNum; i++)
+            {
+                IRow rowSelf = sheet.GetRow(i);
+                if (rowSelf == null) continue;
+
+                datarow = dt.NewRow();
+                for(int j = rowSelf.FirstCellNum;j< cellCount; j++)
+                {
+                    cell = rowSelf.GetCell(j);
+                    if (cell == null)
+                    {
+                        datarow[j] = "";
+                    }
+                    else
+                    {
+                        switch (cell.CellType)
+                        {
+                            case (NPOI.SS.UserModel.CellType)CellType.Blank:
+                                datarow[j] = "";
+                                break;
+                            case (NPOI.SS.UserModel.CellType)CellType.Numeric:
+                                short format = cell.CellStyle.DataFormat;
+                                //对时间格式（2015.12.5、2015/12/5、2015-12-5等）的处理  
+                                if (format == 14 || format == 31 || format == 57 || format == 58)
+                                    datarow[j] = cell.DateCellValue;
+                                else
+                                    datarow[j] = cell.NumericCellValue;
+                                break;
+                            case (NPOI.SS.UserModel.CellType)CellType.String:
+                                datarow[j] = cell.StringCellValue;
+                                break;
+                        }
+                    }
+                    dt.Rows.Add(datarow);
+                }
+            }
+            Console.WriteLine("请输入要复制到的行数：...");
+            outputNum1 = ReadInt();
+            outputNum2 = outputNum1 + copyNum;
+            sheet.ShiftRows(outputNum1 - 1, sheet.LastRowNum, copyNum);
+            for (int i = row.FirstCellNum; i < cellCount; i++) {
+                var newRow = sheet.CreateRow(outputNum1 - 1); }
+            FileStream out2 = new FileStream(filepath, FileMode.Create);
+            workbook.Write(out2);
+            out2.Close();
+            fs.Close();
         }
         public static int ReadInt()
         {
@@ -204,7 +293,7 @@ namespace ConsoleApp
                                 int rowCount = sheet.LastRowNum;//总行数  
                                 if (rowCount > 0)
                                 {
-                                    IRow firstRow = sheet.GetRow(0);//第一行  
+                                    IRow firstRow = sheet.GetRow(1);//第二行  
                                     int cellCount = firstRow.LastCellNum;//列数  
                                     
 
@@ -243,7 +332,7 @@ namespace ConsoleApp
                                         row = sheet.GetRow(i);
                                         if (row == null) continue;
                                         dataRow = dataTable.NewRow();
-                                        for (int j = row.FirstCellNum+1; j < cellCount; j++)
+                                        for (int j = row.FirstCellNum; j < cellCount; j++)
                                         {
                                             cell = row.GetCell(j);
                                             
