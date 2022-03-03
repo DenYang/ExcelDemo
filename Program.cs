@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Data;
 using System.IO;
-using System.Text;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using NPOI.HSSF.UserModel;
-using NPOI.HPSF;
-using NPOI.HSSF.Util;
 using System.Reflection;
 using System.Collections.Generic;
 using NPOI.POIFS.FileSystem;
@@ -23,7 +20,7 @@ namespace ConsoleApp
             //copyRange();
             string filePath = @"C:\Users\cn-yangzheng\Desktop\测试.xls";
             
-            //ModelToExcel(filePath,12,3,data);
+            ModelToExcel(filePath,12,7,data);
             //System.Data.DataTable dt = ReadExcel();
             //WriteExcel(dt);
             Console.WriteLine("代码执行完毕！");
@@ -52,26 +49,7 @@ namespace ConsoleApp
                 out2.Close();
                 fs.Close();
             }
-            /*app.Visible = false;
-            int selectNum,insertNum;
-            Excel.Workbooks books = app.Workbooks;
-            Excel.Workbook book = books.Open(@"C:\Users\cn-yangzheng\Desktop\多表数据 - 副本.xls");
-            Excel.Sheets sts = book.Worksheets;
-            Excel.Worksheet st = sts.Item[3];//sts.Item[1 - SheetCount]
-            Console.WriteLine("请输入选定行数：...");
-            selectNum = ReadInt();
-            Excel.Range rng = st.Application.Rows[selectNum];//返回的是一个range类型，选定第5行数据
-            rng.Select();
-            Console.WriteLine("请输入插入行数：...");
-            insertNum = ReadInt();
-            rng.Select();
-            rng.Resize[insertNum].Insert();//进行1行插入
-            app.DisplayAlerts = false;
-            book.Save();
-            book.Close();
-           */
         }
-
         public static void CopyRange(string filepath)
         {
             IWorkbook workbook;
@@ -97,6 +75,95 @@ namespace ConsoleApp
             workbook.Write(out2);
             out2.Close();
             fs.Close();
+        }
+        //rowCount 总共要写入的行数  columnCount 总共要写入的列数
+        public static void ModelToExcel(string filepath, int rowCount, int columnCount, object[,] data)
+        {
+            FileStream fs = null;
+            fs = File.OpenRead(filepath);
+            int rowHead = 3;//定义文档行头为3行
+            int colHead = 1;//定义文档列头为1行
+            ArrayList al = new ArrayList();
+            IWorkbook workbook = new HSSFWorkbook(fs);
+            fs.Close();
+            ISheet sheet = workbook.GetSheetAt(0);
+            /*
+            sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(3, 6, 1, 1));//将单元格进行合并
+            sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(3, 6, 2, 2));
+            sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(7, 11, 1, 1));
+            sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(7, 11, 2, 2));
+            */
+            IRow row;
+            ICell cell;
+            for (int i = rowHead; i < rowHead + rowCount; i++)//遍历表格的行
+            {
+                row = sheet.GetRow(i);//获取第i行
+                for (int j = colHead; j < colHead + columnCount; j++)//遍历表格每一行的每一列
+                {
+                    cell = row.GetCell(j);//获取第j个元素的数值
+                    if (data[i - rowHead, j - colHead].GetType() == typeof(int))
+                    {
+                        cell.SetCellValue((int)data[i - rowHead, j - colHead]);//将data二维数组中数据存入相对应的单元格当中
+                    }
+                    else if (data[i - rowHead, j - colHead].GetType() == typeof(double))
+                    {
+                        cell.SetCellValue((double)data[i - rowHead, j - colHead]);//将data二维数组中数据存入相对应的单元格当中
+                    }
+                    else if (data[i - rowHead, j - colHead].GetType() == typeof(float))
+                    {
+                        cell.SetCellValue((float)data[i - rowHead, j - colHead]);//将data二维数组中数据存入相对应的单元格当中
+                    }
+                    else
+                    {
+                        cell.SetCellValue(data[i - rowHead, j - colHead].ToString());//将data二维数组中数据存入相对应的单元格当中
+                    }
+                }
+            }
+            int firstCount = 0;
+            for (int k = 0; k < data.GetUpperBound(0) + 1; k++)
+            {
+                if (data[k, 0].ToString() != "")
+                {
+                    Console.WriteLine(data[k, 0]);
+                    //Console.WriteLine(k);
+                    firstCount = k + 1;
+                    al.Add(firstCount);
+                }
+            }
+            foreach (int i in al)
+            {
+                Console.WriteLine(i);
+            }
+            for (int i = 0; i < al.Count; i++)
+            {
+                int region1;
+                int region2;
+                try
+                {
+                    if (i < al.Count - 1)//list集合的Count属性是多少个元素，由于i是从0开始的，所以i永远小于Count，必须先将Count减一操作之后再和i进行比较。
+                    {
+                        region1 = (int)al[i] + rowHead - 1; //代表数据中的第一个为Account Name
+                        region2 = (int)al[i + 1] + rowHead - 2;//代表数据中的下一个Account Name
+                                                               //所以要合并的区域为 region1+rowHead - 1 到 region2 -1 + rowHead -1
+                    }
+                    else
+                    {
+                        region1 = (int)al[i] + rowHead - 1; //代表数据中的第一个为Account Name
+                        region2 = data.GetLength(0) + rowHead - 1;//数组的GetLength方法，当数值为0时，得到的是数组的行值，当数值为1时，得到的是数组的列值
+                        //这个方法首先得到所有数据的行值，然后再加上行头，-1之后就得到表格的最后一行
+                    }
+                    Console.WriteLine(region1 + " " + region2);
+                    sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(region1, region2, 1, 1));//将单元格进行合并
+                    sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(region1, region2, 2, 2));
+                }
+                catch (Exception E)
+                {
+                    break;
+                }
+            }
+            FileStream fileStream = File.OpenWrite(filepath);
+            workbook.Write(fileStream);
+            fileStream.Close();
         }
         public static int ReadInt()
         {
@@ -432,96 +499,6 @@ namespace ConsoleApp
             Unknown = -1, Numeric = 0, String = 1, Formula = 2, Blank = 3, Boolean = 4, Error = 5
         }
         }
-
-        //rowCount 总共要写入的行数  columnCount 总共要写入的列数
-        public static void ModelToExcel(string filepath,int rowCount,int columnCount,object[,] data)
-        {
-                  
-            
-            FileStream fs = null;
-            fs = File.OpenRead(filepath);
-            
-            int rowHead = 3;//定义文档行头为3行
-            int colHead = 1;//定义文档列头为1行
-                
-            
-            
-            ArrayList al = new ArrayList();
-            
-            IWorkbook workbook = new HSSFWorkbook(fs);
-            fs.Close();
-            ISheet sheet = workbook.GetSheetAt(0);
-            
-            /*
-            sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(3, 6, 1, 1));//将单元格进行合并
-            sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(3, 6, 2, 2));
-            sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(7, 11, 1, 1));
-            sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(7, 11, 2, 2));
-            */
-            IRow row ;
-            ICell cell ;
-                //ICellStyle style = workbook.CreateCellStyle();
-                //style.Alignment = HorizontalAlignment.Left;
-            for(int i = rowHead; i < rowHead + rowCount; i++)//遍历表格的行
-                {
-                    row = sheet.GetRow(i);//获取第i行
-                    for(int j =colHead; j <colHead + columnCount; j++)//遍历表格每一行的每一列
-                    {
-                    cell = row.GetCell(j);//获取第j个元素的数值
-                    cell.SetCellValue(data[i-rowHead,j-colHead].ToString());//将data二维数组中数据存入相对应的单元格当中
-                    }
-                }
-            int firstCount = 0;
-
-            for (int k = 0; k < data.GetUpperBound(0) + 1; k++)
-            {
-
-                if (data[k, 0].ToString() != "")
-                {
-                    Console.WriteLine(data[k, 0]);
-                    //Console.WriteLine(k);
-                    firstCount = k + 1;
-                    al.Add(firstCount);
-                }
-            }
-            foreach(int i in al)
-            {
-                Console.WriteLine(i);
-            }
-            for (int i = 0; i < al.Count; i++)
-            {
-                int region1;
-                int region2;
-                try
-                {
-                    if (i < al.Count-1)//list集合的Count属性是多少个元素，由于i是从0开始的，所以i永远小于Count，必须先将Count减一操作之后再和i进行比较。
-                    {
-                        region1 = (int)al[i] + rowHead - 1; //代表数据中的第一个为Account Name
-                        region2 = (int)al[i + 1] + rowHead - 2;//代表数据中的下一个Account Name
-                                                               //所以要合并的区域为 region1+rowHead - 1 到 region2 -1 + rowHead -1
-                    }
-                    else
-                    {
-                        region1 = (int)al[i] + rowHead - 1; //代表数据中的第一个为Account Name
-                        region2 = data.GetLength(0)+rowHead - 1;//数组的GetLength方法，当数值为0时，得到的是数组的行值，当数值为1时，得到的是数组的列值
-                        //这个方法首先得到所有数据的行值，然后再加上行头，-1之后就得到表格的最后一行
-                    }
-                    Console.WriteLine(region1 + " " + region2);
-                    sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(region1, region2, 1, 1));//将单元格进行合并
-                    sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(region1, region2, 2, 2));
-                }
-                catch(Exception E)
-                {
-                    break;
-                }
-            }
-
-            FileStream fileStream = File.OpenWrite(filepath);
-            workbook.Write(fileStream);
-            fileStream.Close();
-           
-            }
-
         public static void CreateNewWorkBook(string inputPath,string outputPath)
         {
             
