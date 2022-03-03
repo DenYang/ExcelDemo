@@ -21,7 +21,9 @@ namespace ConsoleApp
             Console.WriteLine("代码开始执行...");
             InsertData("C:/Users/cn-yangzheng/Desktop/测试.xls",12);
             //copyRange();
-            ModelToExcel();
+            string filePath = @"C:\Users\cn-yangzheng\Desktop\测试.xls";
+            
+            //ModelToExcel(filePath,12,3,data);
             //System.Data.DataTable dt = ReadExcel();
             //WriteExcel(dt);
             Console.WriteLine("代码执行完毕！");
@@ -431,31 +433,18 @@ namespace ConsoleApp
         }
         }
 
-        public static void ModelToExcel()
+        //rowCount 总共要写入的行数  columnCount 总共要写入的列数
+        public static void ModelToExcel(string filepath,int rowCount,int columnCount,object[,] data)
         {
-            FileStream fs = null;
-            string filePath = @"C:\Users\cn-yangzheng\Desktop\测试.xls";
-                 fs = File.OpenRead(filePath);
+                  
             
-                int rowCount = 12;//总共要写入的行数
-                int columnCount = 3;//总共要写入的列数
-                int rowHead = 3;//定义文档行头为3行
-                int colHead = 1;//定义文档列头为1行
+            FileStream fs = null;
+            fs = File.OpenRead(filepath);
+            
+            int rowHead = 3;//定义文档行头为3行
+            int colHead = 1;//定义文档列头为1行
                 
-            object[,] data = {
-                    {"TRAVEL EXPENSES", "商务应酬费", "Dummy"},
-                    {"", "", "孙意璐"},
-                    {"","", "张家茵"},
-                    {"","","总计" },
-                    {"TRAVEL EXPENSES","职员工作餐","Dummy" },
-                    {"","","张家茵" },
-                    {"","","孙意璐" },
-                    {"","","平燕燕" },
-                    {"","","总计" },
-                    {"TRAVEL EXPENSES","职员活动费","孙意璐" },
-                    {"","","张家茵" },
-                    {"","","总计" }
-            };
+            
             
             ArrayList al = new ArrayList();
             
@@ -526,7 +515,8 @@ namespace ConsoleApp
                     break;
                 }
             }
-            FileStream fileStream = File.OpenWrite(filePath);
+
+            FileStream fileStream = File.OpenWrite(filepath);
             workbook.Write(fileStream);
             fileStream.Close();
            
